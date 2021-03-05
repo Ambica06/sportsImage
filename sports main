@@ -1,0 +1,87 @@
+import pandas as pd
+import numpy as np
+from google.colab import files
+! pip install kaggle
+uploaded = files.upload()
+
+! mkdir ~/.kaggle
+! cp kaggle.json ~/.kaggle/
+
+! chmod 600 ~/.kaggle/kaggle.json
+
+!pip install --upgrade --force-reinstall --no-deps kaggle
+
+! rm -rf train
+! mkdir train
+
+! kaggle competitions download -c logical-rythm-2k20-sports-image-classification
+
+! unzip logical-rythm-2k20-sports-image-classification.zip -d train
+
+from PIL import Image, ImageOps
+im = Image.open('train/train/train/5.jpg')
+print(im.format)
+print(im.size)
+
+from numpy import asarray
+X=[]
+for i in range(11040):
+  image = Image.open('train/train/train/'+str(i)+'.jpg')
+  newimage = image.resize((100, 100))
+  newimage = ImageOps.grayscale(newimage)  
+  temp = asarray(newimage)
+  X.append(temp)
+
+
+len(X)
+X=np.array(X)
+
+X = X.reshape(-11040, 10000)
+
+X.shape
+
+X[0:1]
+
+#label encoder
+from sklearn import preprocessing
+labelEncoder_Y = preprocessing.LabelEncoder()
+df = pd.read_csv('train/train_labels.csv')
+df['sports']= labelEncoder_Y.fit_transform(df['sports']) 
+df.head(10)
+
+Y=df[['sports']]
+Y.shape
+Y=np.array(Y)
+
+Y = Y.reshape(11040)
+
+print(Y)
+
+import seaborn as sns
+sns.countplot(x="sports", data=df)
+
+#X is list of numpy array of images and Y is list of labels
+import sklearn
+from sklearn.model_selection import StratifiedKFold
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.cluster import KMeans
+from sklearn.model_selection import train_test_split
+
+def models(X_train, Y_train) :
+  #decision tree
+  from sklearn.tree import DecisionTreeClassifier
+  tree=DecisionTreeClassifier(criterion = 'entropy', random_state=0)
+  tree.fit(X_train, Y_train)
+
+  #random forest classifier
+  from sklearn.ensemble import RandomForestClassifier
+  forest=RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0)
+  forest.fit(X_train, Y_train)
+
+  #print the models accuracy on the training data
+  print('[1]Decision Tree Training accuracy:', tree.score(X_train, Y_train))
+  print('[2]Random Forest Training accuracy:', forest.score(X_train, Y_train))
+  return tree, forest
+
+model = models(X, Y)
